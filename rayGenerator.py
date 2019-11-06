@@ -1,11 +1,15 @@
+# rayGenerator.py
+# Ray class: Contains information for a view ray
+# Camera class: Definition of a camera for generating rays
+
 import numpy as np
 
-class ray(object):
+class Ray(object):
     def __init__(self, origin, direction):
         self.origin = origin
         self.direction = direction
 
-class camera(object):
+class Camera(object):
     def __init__(self, pos, to, upApprox,\
         focalLen, aspect, widthActual, widthPix):
         self.e = pos # Eye point
@@ -51,7 +55,7 @@ class camera(object):
         v = self.b + (self.t - self.b) * (j + 0.5) / self.heightPix
         rayOrigin = self.e
         rayDirection = -(self.d * self.w) + (u * self.u) + (v * self.v)
-        rayDirection = rayDirection #/ np.linalg.norm(rayDirection)
+        rayDirection = rayDirection / np.linalg.norm(rayDirection)
         return ray(rayOrigin, rayDirection)
 
     # Rays for perspective projection
@@ -61,7 +65,3 @@ class camera(object):
             for j in range(0, self.heightPix):
                 rays.append(self.calcPixelPerpsectiveRay(i,j))
         return rays
-
-a = camera(pos = np.array([0.0,0.0,0.0]), to = np.array([0.0,1.0,0.0]),\
-    upApprox = np.array([0.0,0.0,1.0]), focalLen = 1.0,\
-    aspect = 1.0, widthActual = 4.0, widthPix = 2)
