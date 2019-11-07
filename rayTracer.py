@@ -9,13 +9,11 @@ from geometry import Sphere, Triangle
 scene = []
 scene.append(Sphere(np.array([0.0,2.0,0.0]),\
     2.0, np.array([0.0, 0.0, 1.0])))
-scene.append(Triangle(np.array([0.0, 0.0, 5.0]), np.array([0.0, -2.0, 0.0]),\
-    np.array([0.0, -2.0, 4.0]), np.array([0.0, 0.0, 0.0])))
 
 # Ray generation
 cam = Camera(np.array([-10.0, 0.0, 0.0]),\
     np.array([1.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]),\
-    10.0, 1.0, 10.0, 10)
+    10.0, 1.0, 10.0, 20)
 viewRays = cam.calcOrthoRays()
 
 # Ray intersection

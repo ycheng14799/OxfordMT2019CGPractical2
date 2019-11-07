@@ -35,7 +35,7 @@ class Camera(object):
 
     # Calculate orthographic ray through given (i,j) pixel
     def calcPixelOrthoRay(self, i, j):
-        u = self.l + (self.r - self.l) * (i + 0.5) / self.widthPix
+        u = self.r - (self.r - self.l) * (i + 0.5) / self.widthPix
         v = self.t - (self.t - self.b) * (j + 0.5) / self.heightPix
         rayDirection = - self.w + 0.
         rayDirection = rayDirection / np.linalg.norm(rayDirection)
@@ -52,7 +52,7 @@ class Camera(object):
 
     # Calculate perspective ray given (i,j) pixel (top left: (0,0))
     def calcPixelPerpsectiveRay(self, i, j):
-        u = self.l + (self.r - self.l) * (i + 0.5) / self.widthPix
+        u = self.r - (self.r - self.l) * (i + 0.5) / self.widthPix
         v = self.t - (self.t - self.b) * (j + 0.5) / self.heightPix
         rayOrigin = self.e
         rayDirection = -(self.d * self.w) + (u * self.u) + (v * self.v)
