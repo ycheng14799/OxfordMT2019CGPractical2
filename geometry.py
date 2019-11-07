@@ -6,9 +6,9 @@ from rayGenerator import Ray
 
 class Sphere(object):
     def __init__(self, center, radius, color):
-        self.c = center + 0. # Sphere center
-        self.R = radius + 0. # Sphere radius
-        self.color = color + 0. # Sphere color
+        self.c = center # Sphere center
+        self.R = radius # Sphere radius
+        self.color = color # Sphere color
 
     # Method for calculating normals
     def calcNormal(self, p):

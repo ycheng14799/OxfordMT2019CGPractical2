@@ -13,17 +13,13 @@ class Camera(object):
     def __init__(self, pos, to, upApprox,\
         focalLen, aspect, widthActual, widthPix):
         self.e = pos # Eye point
-        self.e += 0. # Adding zero to avoid negative zeros issue with floats
         self.w = (pos - to) / np.linalg.norm(pos - to) # w vector, negative of forward
-        self.w += 0.
         u = np.cross(upApprox, self.w)
         self.u = u / np.linalg.norm(u) # u vector, right
-        self.u += 0.
-        v = np.cross(self.w, u)
+        v = np.cross(self.w, self.u)
         self.v = v / np.linalg.norm(v) # v vector, up
-        self.v += 0.
-        self.d = focalLen + 0. # Focal length
-        self.aspect = aspect + 0. # Aspect ratio
+        self.d = focalLen # Focal length
+        self.aspect = aspect # Aspect ratio
         self.width = widthActual # Actual width of camera plane
         self.height = widthActual / aspect # Actual height of camera plane
         self.widthPix = widthPix # Number of pixels across width
@@ -35,10 +31,9 @@ class Camera(object):
 
     # Calculate orthographic ray through given (i,j) pixel
     def calcPixelOrthoRay(self, i, j):
-        u = self.r - (self.r - self.l) * (i + 0.5) / self.widthPix
+        u = self.l + (self.r - self.l) * (i + 0.5) / self.widthPix
         v = self.t - (self.t - self.b) * (j + 0.5) / self.heightPix
-        rayDirection = - self.w + 0.
-        rayDirection = rayDirection / np.linalg.norm(rayDirection)
+        rayDirection = - self.w
         rayOrigin = self.e + (u * self.u) + (v * self.v)
         return Ray(rayOrigin, rayDirection)
 
@@ -47,7 +42,8 @@ class Camera(object):
         rays = []
         for j in range(0, self.heightPix):
             for i in range(0, self.widthPix):
-                rays.append(self.calcPixelOrthoRay(i,j))
+                aRay = self.calcPixelOrthoRay(i,j)
+                rays.append(aRay)
         return rays
 
     # Calculate perspective ray given (i,j) pixel (top left: (0,0))
