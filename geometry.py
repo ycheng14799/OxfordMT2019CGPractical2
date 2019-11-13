@@ -41,9 +41,9 @@ class Triangle(object):
         ab = ab / np.linalg.norm(ab)
         ac = self.c - self.a
         ac = ac / np.linalg.norm(ac)
-        normal = np.cross(ab, ac)
+        normal = np.cross(ac,ab)
         self.normal = normal / np.linalg.norm(normal)
-        
+
     def calcNormal(self, ray):
         return self.normal
 

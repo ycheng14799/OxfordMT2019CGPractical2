@@ -8,6 +8,8 @@ from rayGenerator import Camera, Ray
 from geometry import Sphere, Triangle
 from light import PointLight
 
+COLOR_CHANNELS = 3
+
 def calcIntersectPoint(camPos, ray, ts):
     t = min(ts)
     rayDir = ray.direction / np.linalg.norm(ray.direction)
@@ -32,19 +34,23 @@ def blinnPhongShadePoint(I, ka, kd, ks, p, n, pointPos, camPos, lightPos):
     h = v + l
     h = h / np.linalg.norm(h)
 
-    diffuse = kd * I * max(0, np.dot(n, l))
-    specular = ks * I * max(0, np.dot(n, h))**p
+    diffuse = np.multiply(kd, I) * max(0, np.dot(n, l))
+    specular = np.multiply(ks, I) * max(0, np.dot(n, h))**p
 
-    return (ka * I) + diffuse + specular
+    return np.multiply(ka, I) + diffuse + specular
 
 # Scene definition
 scene = []
-scene.append(Sphere(np.array([0.0,0.0,0.0]),\
-    1.0, np.array([0.0, 0.0, 1.0])))
+scene.append(Sphere(np.array([2.0,0.0,1.0]),\
+    1.0, np.array([1.0, 1.0, 1.0])))
+scene.append(Triangle(np.array([0.0,-2.0,-1.0]),\
+    np.array([0.0,2.0,-1.0]),\
+    np.array([2.0,0.0,0.0]),\
+    np.array([1.0,1.0,1.0])))
 # Lights
 lights = []
-lights.append(PointLight(np.array([0.0, 0.0, 3.0]), 1.0))
-lights.append(PointLight(np.array([0.0, 3.0, 0.0]), 1.0))
+lights.append(PointLight(np.array([0.0, 3.0, 3.0]),\
+    np.array([1.0, 1.0, 1.0])))
 
 # Ray generation
 cam = Camera(np.array([-2.0, 0.0, 0.0]),\
@@ -55,7 +61,7 @@ viewRays = cam.calcPerspectiveRays()
 # Ray intersection
 screenWidth = cam.widthPix
 screenHeight = cam.heightPix
-screen = np.zeros((screenHeight, screenWidth))
+screen = np.zeros((screenHeight, screenWidth, COLOR_CHANNELS))
 
 for i in range(0, screenHeight):
     for j in range(0, screenWidth):
@@ -72,10 +78,14 @@ for i in range(0, screenHeight):
                 # temporarily define a lighting position
                 pointShade = 0.0
                 for light in lights:
-                    pointShade += blinnPhongShadePoint(light.intensity, 0.25,\
-                        0.75, 0.5, 32, intersectionNormal, intersectPoint,\
+                    pointShade += blinnPhongShadePoint(light.intensity,\
+                        np.array([0.25, 0.25, 0.25]),\
+                        np.array([0.75, 0.75, 0.75]),\
+                        np.array([0.5, 0.5, 0.5]),\
+                        1, intersectionNormal, intersectPoint,\
                         cam.e, light.position)
                 screen[i,j] = pointShade
+
 
 # Display screen
 cv2.imshow('rendered', screen)
