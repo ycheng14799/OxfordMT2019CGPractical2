@@ -36,6 +36,16 @@ class Triangle(object):
         self.b = b + 0.
         self.c = c + 0.
         self.color = color + 0. # Triangle color
+        # Calculate normal
+        ab = self.b - self.a
+        ab = ab / np.linalg.norm(ab)
+        ac = self.c - self.a
+        ac = ac / np.linalg.norm(ac)
+        normal = np.cross(ab, ac)
+        self.normal = normal / np.linalg.norm(normal)
+        
+    def calcNormal(self, ray):
+        return self.normal
 
     # Method for calculating intersections
     def calcIntersection(self, ray):
@@ -67,4 +77,4 @@ class Triangle(object):
         if (beta < 0) or (beta > (1 - gamma)):
             return (False, np.inf)
 
-        return (True, t)
+        return (True, t, np.inf)
