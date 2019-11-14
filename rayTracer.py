@@ -10,8 +10,7 @@ from light import PointLight
 
 COLOR_CHANNELS = 3
 
-def calcIntersectPoint(camPos, ray, ts):
-    t = min(ts)
+def calcIntersectPoint(camPos, ray, t):
     rayDir = ray.direction / np.linalg.norm(ray.direction)
     return camPos + t * rayDir
 
@@ -67,13 +66,15 @@ scene.append(Triangle(np.array([-2.0,-2.0,-1.0]),\
     np.array([2.0,2.0,-1.0]),np.array([2.0,-2.0,-1.0]),\
     np.array([1.0,1.0,1.0]), 0.25, 0.5, 0.5, 1))
 scene.append(Sphere(np.array([0.0,0.0,0.0]),\
-    1.0, np.array([1.0, 0.5, 0.5]), 0.25, 0.5, 0.5, 32))
+    1.0, np.array([1.0, 1.0, 1.0]), 0.25, 0.5, 0.5, 32))
 
 
 # Lights
 lights = []
 lights.append(PointLight(np.array([0.0, 3.0, 3.0]),\
-    np.array([1.0, 1.0, 1.0])))
+    np.array([0.75, 0.5, 0.5])))
+lights.append(PointLight(np.array([0.0, -3.0, 3.0]),\
+    np.array([0.5, 0.5, 0.75])))
 
 # Ray generation
 cam = Camera(np.array([-5.0, 0.0, 0.0]),\
@@ -88,24 +89,30 @@ screen = np.zeros((screenHeight, screenWidth, COLOR_CHANNELS))
 
 for i in range(0, screenHeight):
     for j in range(0, screenWidth):
+        screenPos = (i * screenWidth) + j
+        intersected = False
+        intersectT = np.inf
+        intersectObj = scene[0]
         for obj in scene:
-            screenPos = (i * screenWidth) + j
             intersectInfo = obj.calcIntersection(viewRays[screenPos])
-            if(intersectInfo[0] == True):
-                #screen[i,j] = 1.0
-                # Calculate shading
-                # Calculate intersection point
-                intersectPoint = calcIntersectPoint(cam.e, viewRays[screenPos], intersectInfo[1:])
-                # Calculate intersection normal
-                intersectionNormal = obj.calcNormal(intersectPoint)
-                # temporarily define a lighting position
-                pointShade = 0.0
-                for light in lights:
-                    pointShade += blinnPhongShadePoint(scene, light.intensity,\
-                        obj.color, obj.ka, obj.kd, obj.ks,
-                        obj.p, intersectionNormal, intersectPoint,\
-                        cam.e, light.position)
-                screen[i,j] = pointShade
+            if intersectInfo[0] == True:
+                minIntersect = min(intersectInfo[1:])
+                if minIntersect < intersectT and minIntersect > 0:
+                    intersectT = minIntersect
+                    intersected = True
+                    intersectObj = obj
+        if intersected == True:
+            intersectPoint = calcIntersectPoint(cam.e, viewRays[screenPos], intersectT)
+            # Calculate intersection normal
+            intersectionNormal = intersectObj.calcNormal(intersectPoint)
+            # temporarily define a lighting position
+            pointShade = 0.0
+            for light in lights:
+                pointShade += blinnPhongShadePoint(scene, light.intensity,\
+                    intersectObj.color, intersectObj.ka, intersectObj.kd,\
+                    intersectObj.ks, intersectObj.p, intersectionNormal,\
+                    intersectPoint, cam.e, light.position)
+            screen[i,j] = pointShade
 
 
 # Display screen
