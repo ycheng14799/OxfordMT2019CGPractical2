@@ -5,10 +5,14 @@ import numpy as np
 from rayGenerator import Ray
 
 class Sphere(object):
-    def __init__(self, center, radius, color):
+    def __init__(self, center, radius, color, ka, kd, ks, p):
         self.c = center # Sphere center
         self.R = radius # Sphere radius
         self.color = color # Sphere color
+        self.ka = ka * color # Ambient
+        self.kd = kd * color # Diffuse
+        self.ks = ks * color # Specular
+        self.p = p # Phong Exponent
 
     # Method for calculating normals
     def calcNormal(self, p):
@@ -31,11 +35,12 @@ class Sphere(object):
             return (True, t1, t2)
 
 class Triangle(object):
-    def __init__(self, a, b, c, color): # Triangle with vertices a, b, c
-        self.a = a + 0.
-        self.b = b + 0.
-        self.c = c + 0.
-        self.color = color + 0. # Triangle color
+    def __init__(self, a, b, c, color, ka, kd, ks, p):
+        # Triangle with vertices a, b, c
+        self.a = a
+        self.b = b
+        self.c = c
+        self.color = color  # Triangle color
         # Calculate normal
         ab = self.b - self.a
         ab = ab / np.linalg.norm(ab)
@@ -43,6 +48,10 @@ class Triangle(object):
         ac = ac / np.linalg.norm(ac)
         normal = np.cross(ac,ab)
         self.normal = normal / np.linalg.norm(normal)
+        self.ka = ka * color # Ambient
+        self.kd = kd * color # Diffuse
+        self.ks = ks * color # Specular
+        self.p = p # Phong Exponent
 
     def calcNormal(self, ray):
         return self.normal
