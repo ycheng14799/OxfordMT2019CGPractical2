@@ -59,7 +59,29 @@ def blinnPhongShadePoint(scene, I, color, ka, kd, ks, p, n, pointPos, camPos, li
 def reflect(normal, incident):
     return (incident - 2 * np.dot(incident, normal) * normal)
 
-def rayColor(scene, start, lights, ray, maxReflect):
+def refract(normal, incident, n1, n2):
+    n = n1 / n2
+    cosI = -np.dot(normal, incident)
+    sinT2 = n * n * (1.0 - (cosI * cosI))
+    if sinT2 > 1.0:
+        return False, np.zeros((3))
+    cosT = np.sqrt(1.0 - sinT2)
+    return True, n * incident + (n * cosI - cosT) * normal
+
+def rSchlick(normal, incident, n1, n2):
+    r0 = (n1 - n2) / (n1 + n2)
+    r0 *= r0
+    cosX = -np.dot(normal, incident)
+    if (n1 > n2):
+        n = n1 / n2
+        sinT2 = n * n * (1.0 - cosX * cosX)
+        if sinT2 > 1.0:
+            return 1.0
+        cosX = np.sqrt(1.0 - sinT2)
+    x = 1.0 - cosX
+    return r0 + (1.0 - r0) * x * x * x * x * x
+
+def rayColor(scene, start, lights, ray, maxBounce):
     intersected = False
     intersectT = np.inf
     intersectObj = scene[0]
@@ -84,11 +106,24 @@ def rayColor(scene, start, lights, ray, maxReflect):
                 intersectPoint, start, light.position)
         # calculate reflection
         reflectRayDir = reflect(intersectionNormal, ray.direction)
+        reflectRayDir = reflectRayDir / np.linalg.norm(reflectRayDir)
         reflectRay = Ray(intersectPoint, reflectRayDir)
-        if maxReflect < 0:
+        reflectionColor = rayColor(scene, intersectPoint, lights, reflectRay, maxBounce - 1)
+        if maxBounce < 0:
             return pointShade
         else:
-            return pointShade + rayColor(scene, intersectPoint, lights, reflectRay, maxReflect - 1)
+            if np.dot(intersectionNormal, ray.direction) < 0:
+                notTIR, refractRayDir = refract(intersectionNormal, ray.direction, 1.0, 1.92)
+                R = rSchlick(intersectionNormal, ray.direction, 1.0, 1.92)
+            else:
+                notTIR, refractRayDir = refract(-intersectionNormal, ray.direction, 1.92, 1.0)
+                R = rSchlick(-intersectionNormal, ray.direction, 1.92, 1.0)
+            if notTIR == False:
+                return reflectionColor
+            else:
+                refractRay = Ray(intersectPoint, refractRayDir)
+                refractionColor = rayColor(scene, intersectPoint, lights, refractRay, maxBounce - 1)
+                return R * reflectionColor + (1.0 - R) * refractionColor
     else:
         dir = ray.direction
         dir = dir / np.linalg.norm(dir)
@@ -98,17 +133,8 @@ def rayColor(scene, start, lights, ray, maxReflect):
 
 # Scene definition
 scene = []
-'''
-scene.append(Triangle(np.array([-2.0,-2.0,-1.0]),\
-    np.array([-2.0,2.0,-1.0]),np.array([2.0,2.0,-1.0]),\
-    np.array([1.0,1.0,1.0]), 0.25, 0.5, 0.5, 1))
-scene.append(Triangle(np.array([-2.0,-2.0,-1.0]),\
-    np.array([2.0,2.0,-1.0]),np.array([2.0,-2.0,-1.0]),\
-    np.array([1.0,1.0,1.0]), 0.25, 0.5, 0.5, 1))
-'''
-scene.append(Sphere(np.array([0.0,2.0,0.0]),\
-    1.0, np.array([1.0, 1.0, 1.0]), 0.25, 0.5, 0.5, 32))
-scene.append(Sphere(np.array([0.0,-2.0,0.0]),\
+
+scene.append(Sphere(np.array([0.0,0.0,0.0]),\
     1.0, np.array([1.0, 1.0, 1.0]), 0.25, 0.5, 0.5, 32))
 
 # Lights
@@ -125,7 +151,7 @@ mapWidth = map.shape[0]
 
 # Camera
 t = 0.0 # Camera control parameter
-cam = Camera(np.array([10.0 * np.cos(t), 10.0 * np.sin(t), 0.0]),\
+cam = Camera(np.array([2.0 * np.cos(t), 2.0 * np.sin(t), 0.0]),\
     np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]),\
     20, 1.25, 25, 500)
 
@@ -135,21 +161,19 @@ screenHeight = cam.heightPix
 screen = np.zeros((screenHeight, screenWidth, COLOR_CHANNELS))
 
 # Render loop
-while(True):
-    cam = Camera(np.array([10.0 * np.cos(t), 10.0 * np.sin(t), 0.0]),\
-        np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]),\
-        20, 1.25, 25, 500)
+cam = Camera(np.array([2.5 * np.cos(t), 2.5 * np.sin(t), 0.0]),\
+    np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]),\
+    20, 1.25, 25, 500)
 
-    for i in range(0, screenHeight):
-        for j in range(0, screenWidth):
-            ray = cam.calcPixelPerpsectiveRay(j,i)
-            screen[i,j] = rayColor(scene, cam.e, lights, ray, 2)
+for i in range(0, screenHeight):
+    for j in range(0, screenWidth):
+        ray = cam.calcPixelPerpsectiveRay(j,i)
+        screen[i,j] = rayColor(scene, cam.e, lights, ray, 20)
 
-    cv2.imshow('frame',screen)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+cv2.imshow('frame',screen)
+cv2.waitKey(0)
 
-    # Update camera control parameter
-    t += 0.1
+# Update camera control parameter
+t += 0.1
 
 cv2.destroyAllWindows()
